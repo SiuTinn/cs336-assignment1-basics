@@ -7,17 +7,22 @@ from collections import Counter
 
 
 class PreTokenizer:
-    def __init__(self, special_tokens: list[str]):
+    def __init__(self, special_tokens: list[str] | None = None):
         """
         init pretokenizer
 
         Args:
             special_tokens
         """
+        if special_tokens is None:
+            special_tokens = []
         self.special_tokens = sorted(special_tokens, key=len, reverse=True)
-        pattern = "|".join(
-            re.escape(token) for token in special_tokens
-        ) if special_tokens else r"(?!)"
+        # Use capturing group to preserve special tokens in split
+        escaped_tokens = [re.escape(token) for token in self.special_tokens]
+        if escaped_tokens:
+            pattern = "(" + "|".join(escaped_tokens) + ")"
+        else:
+            pattern = r"(?!)"
         self.special_tokens_pattern = pattern
         self.word_pattern = re.compile(
             r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
@@ -89,8 +94,12 @@ class PreTokenizer:
         for doc in docs:
             if not doc:
                 continue
-            matches = [word.group(0) for word in self.word_pattern.finditer(doc)]
-            str_freq.update(matches)
+            # Skip special tokens - they should not be tokenized further
+            if doc in self.special_tokens:
+                str_freq[doc] += 1
+            else:
+                matches = [word.group(0) for word in self.word_pattern.finditer(doc)]
+                str_freq.update(matches)
         # 将字符串词频转换为字节词频
         for word, freq in str_freq.items():
             word_freq[word.encode("utf-8")] = freq
@@ -105,7 +114,7 @@ class PreTokenizer:
         Returns:
             预分词bytes列表
         """
-        parts = re.split(f'{self.special_tokens_pattern}', text)
+        parts = re.split(self.special_tokens_pattern, text)
 
         result = []
 
@@ -114,7 +123,7 @@ class PreTokenizer:
                 result.append(part.encode('utf-8'))
             elif part:
                 tokens = [match.group(0).encode('utf-8') for match in self.word_pattern.finditer(part)]
-                result.append(tokens)
+                result.extend(tokens)
         return result
 
     def pretokenize_iter(self, texts: Iterable[str]) -> Iterable[bytes]:
@@ -126,7 +135,7 @@ class PreTokenizer:
             生成预分词结果bytes的迭代器
         """
         for text in texts:
-            parts = re.split(f'{self.special_tokens_pattern}', text)
+            parts = re.split(self.special_tokens_pattern, text)
 
             for part in parts:
                 if part in self.special_tokens:

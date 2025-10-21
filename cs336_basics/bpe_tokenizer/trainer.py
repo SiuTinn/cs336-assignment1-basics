@@ -40,7 +40,14 @@ class BPETrainer:
 
     def initialize_splits_and_pairs(self, word_freqs: Counter) -> None:
         for word, word_freq in word_freqs.items():
-            self.splits[word] = [bytes([b]) for b in word]
+            # Special tokens should not be split into bytes
+            special_token_bytes = {token.encode('utf-8') for token in self.special_tokens}
+            if word in special_token_bytes:
+                # Keep special tokens as atomic units
+                self.splits[word] = [word]
+            else:
+                self.splits[word] = [bytes([b]) for b in word]
+            
             word_pieces = self.splits[word]
             if len(word_pieces) == 1:
                 continue
@@ -57,11 +64,17 @@ class BPETrainer:
         """
         找到频率最高的字节对
         如果频率相同，选择字典序最大的那对
+        特殊tokens的部分不能参与merge
         """
         best_freq = -1
         best_pair = None
         
+        special_token_bytes = {token.encode('utf-8') for token in self.special_tokens}
+        
         for pair, freq in self.pair_freqs.items():
+            # Skip pairs that are part of or contain special tokens
+            if pair[0] in special_token_bytes or pair[1] in special_token_bytes:
+                continue
             if freq > best_freq or (freq == best_freq and (best_pair is None or pair > best_pair)):
                 best_freq = freq
                 best_pair = pair
