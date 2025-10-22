@@ -1,0 +1,57 @@
+{
+  "training_config": {
+    "input_file": "./data/TinyStoriesV2-GPT4-train.txt",
+    "input_file_size_mb": 2124.550973892212,
+    "vocab_size": 10000,
+    "special_tokens": [
+      "<|endoftext|>"
+    ]
+  },
+  "training_time": {
+    "total_seconds": 298.62802147865295,
+    "hours": 0,
+    "minutes": 4,
+    "seconds": 58.628021478652954,
+    "readable": "0h 4m 58.63s"
+  },
+  "memory": {
+    "initial_mb": 20.91796875,
+    "peak_mb": 234.765625,
+    "used_mb": 213.84765625
+  },
+  "vocabulary_stats": {
+    "actual_size": 10000,
+    "longest_token_length": 15,
+    "longest_token_hex": "206163636f6d706c6973686d656e74",
+    "average_token_length": 5.7913,
+    "min_token_length": 1,
+    "max_token_length": 15,
+    "tokens_by_length": {
+      "1": 256,
+      "2": 360,
+      "4": 1450,
+      "3": 912,
+      "5": 1835,
+      "7": 1264,
+      "6": 1666,
+      "8": 1030,
+      "9": 602,
+      "10": 328,
+      "11": 178,
+      "12": 78,
+      "14": 11,
+      "13": 27,
+      "15": 3
+    }
+  },
+  "merges_stats": {
+    "total_merges": 9743,
+    "expected_merges": 9743
+  },
+  "output_files": {
+    "vocabulary": "./output/TinyStories_train_10000_token_vocab.bin",
+    "vocabulary_size_kb": 134.6845703125,
+    "merges": "./output/TinyStories_train_10000_merges.bin",
+    "merges_size_kb": 132.4140625
+  }
+}

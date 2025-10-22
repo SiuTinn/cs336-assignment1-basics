@@ -1,0 +1,27 @@
+{
+  "dataset": "OpenWebText",
+  "vocab_size": 32000,
+  "training_time_seconds": 2236.7285487651825,
+  "training_time_formatted": "0h 37m 16.73s",
+  "memory_used_mb": 13668.8515625,
+  "peak_memory_mb": 13689.765625,
+  "initial_memory_mb": 20.9140625,
+  "input_file_size_mb": 11368.285235404968,
+  "vocabulary_file_size_kb": 448.0419921875,
+  "merges_file_size_kb": 445.771484375,
+  "num_merges": 31743,
+  "token_length_stats": {
+    "min": 1,
+    "max": 64,
+    "avg": 6.33721875
+  },
+  "longest_token": {
+    "id": 25822,
+    "length": 64,
+    "bytes": "c383c382c383c382c383c382c383c382c383c382c383c382c383c382c383c382c383c382c383c382c383c382c383c382c383c382c383c382c383c382c383c382",
+    "decoded": "\u00c3\u00c2\u00c3\u00c2\u00c3\u00c2\u00c3\u00c2\u00c3\u00c2\u00c3\u00c2\u00c3\u00c2\u00c3\u00c2\u00c3\u00c2\u00c3\u00c2\u00c3\u00c2\u00c3\u00c2\u00c3\u00c2\u00c3\u00c2\u00c3\u00c2\u00c3\u00c2"
+  },
+  "special_tokens": [
+    "<|endoftext|>"
+  ]
+}

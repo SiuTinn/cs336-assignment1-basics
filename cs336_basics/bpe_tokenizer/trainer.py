@@ -7,6 +7,7 @@ import cProfile
 import pstats
 import heapq
 
+from tqdm import tqdm
 from cs336_basics.bpe_tokenizer.pre_tokenizer import PreTokenizer
 
 
@@ -62,27 +63,28 @@ class BPETrainer:
     
     def find_best_pairs(self) -> Tuple[bytes, bytes]:
         """
-        找到频率最高的字节对
-        如果频率相同，选择字典序最大的那对
-        特殊tokens的部分不能参与merge
+        从堆中弹出频率最高的字节对（优化版）
+        使用堆避免每次都遍历整个pair_freqs字典
+        时间复杂度从O(n)降低到O(log n) per iteration
         """
-        best_freq = -1
-        best_pair = None
-        
         special_token_bytes = {token.encode('utf-8') for token in self.special_tokens}
         
-        for pair, freq in self.pair_freqs.items():
-            # Skip pairs that are part of or contain special tokens
+        # 从堆中取出频率最高的对，跳过包含特殊token的对
+        while self.freq_max_heap:
+            neg_freq, pair = heapq.heappop(self.freq_max_heap)
+            freq = -neg_freq
+            
+            # 检查该对是否仍然有效（懒惰删除策略）
+            if pair not in self.pair_freqs or self.pair_freqs[pair] != freq:
+                continue
+            
+            # 跳过包含特殊token的对
             if pair[0] in special_token_bytes or pair[1] in special_token_bytes:
                 continue
-            if freq > best_freq or (freq == best_freq and (best_pair is None or pair > best_pair)):
-                best_freq = freq
-                best_pair = pair
+                
+            return pair
         
-        if best_pair is None:
-            raise ValueError("没有找到频率最高的字节对")
-        
-        return best_pair
+        raise ValueError("没有找到频率最高的字节对")
 
     def _update_pair_freqs(self, new_pair, old_pair, word, word_freq) -> None:
         self.pair_to_words.setdefault(new_pair, set()).add(word)
@@ -141,19 +143,25 @@ class BPETrainer:
             self.token_vocab[self.vocab_size - len(self.special_tokens) + m] = token.encode('utf-8')
 
     def train(self, input_path: str) -> Tuple[Dict[int, bytes], List[Tuple[bytes, bytes]]]:
+        print("[1/4] 读取语料库...")
         word_freq = Counter()
         for docs in self.preprocessor.read_corpus(input_path):
             chunk_word_freq = self.preprocessor.build_word_frequency(docs)
             word_freq.update(chunk_word_freq)
+        print(f"✓ 加载完成，词汇量: {len(word_freq)}")
 
         self.token_vocab = {i: bytes([i]) for i in range(256)}
         num_merges = self.vocab_size - 256 - len(self.special_tokens)
         self.merges = []
 
+        print("[2/4] 初始化字节对和频率...")
         self.initialize_splits_and_pairs(word_freq)
+        print(f"✓ 初始化完成，字节对数: {len(self.pair_freqs)}")
 
-        for num_merge in range(num_merges):
+        print(f"[3/4] 执行 {num_merges} 次 BPE 合并...")
+        for num_merge in tqdm(range(num_merges), desc="合并进度", unit="merge"):
             if not self.pair_freqs:
+                print(f"⚠ 在第 {num_merge} 次合并时用尽了所有字节对")
                 break
 
             best_pair = self.find_best_pairs()
@@ -163,7 +171,11 @@ class BPETrainer:
             self.token_vocab[256 + num_merge] = new_token
             self.update_splits_and_pairs(best_pair, new_token, word_freq)
 
+        print(f"✓ 完成 {len(self.merges)} 次合并")
+
+        print("[4/4] 添加特殊 token...")
         self.add_special_tokens()
+        print(f"✓ 词汇表大小: {len(self.token_vocab)}")
 
         return self.token_vocab, self.merges
 
