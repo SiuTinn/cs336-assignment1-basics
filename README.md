@@ -13,6 +13,8 @@ We manage our environments with `uv` to ensure reproducibility, portability, and
 Install `uv` [here](https://github.com/astral-sh/uv) (recommended), or run `pip install uv`/`brew install uv`.
 We recommend reading a bit about managing projects in `uv` [here](https://docs.astral.sh/uv/guides/projects/#managing-dependencies) (you will not regret it!).
 
+uv最好在pyproject.toml里的[tool.uv]配置阿里源:`index-url = "https://mirrors.aliyun.com/pypi/simple/"`
+
 You can now run any code in the repo using
 ```sh
 uv run <python_file_path>
