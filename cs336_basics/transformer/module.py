@@ -95,12 +95,7 @@ class Embedding(nn.Module):
 
 class RMSNorm(nn.Module):
     """
-    Root Mean Square Layer Normalization (RMSNorm)。
-    
-    相比于 LayerNorm，RMSNorm 省略了减去均值的步骤，直接对均方根进行归一化，
-    具有更高的计算效率，同时保持了良好的性能。
-    
-    常用于现代 Transformer 模型中（如 LLaMA）。
+    Root Mean Square Layer Normalization (RMSNorm)
     """
     def __init__(self, d_model: int, eps: float = 1e-5, device=None, dtype=None):  
         """
@@ -283,4 +278,45 @@ class MultiheadSelfAttentionWithRoPE(MultiheadSelfAttention):
         mask = torch.tril(torch.ones((seq_len, seq_len), dtype=torch.bool)).to(self.device)
         
         atten = scaled_dot_product_attention(Q, K, V, mask)
-        atten = rearrange()
+        atten = rearrange(atten, "... head seq_len d_k -> ... seq_len (head d_k)")
+
+        return self.w_o(atten)
+
+
+class TransformerBlock(nn.Module):
+    """
+    Transformer块: 自注意力机制和前馈网络
+    """
+    def __init__(self, d_mdoel: int, num_heads: int, max_seq_len: int, d_ff: int=None, theta: float=10000.0, device=None):
+        """
+        Args:
+            d_model: 输入特征的维度
+            num_heads: 多头注意力的头数
+            d_ff: 前馈网络中的中间层维度
+            max_seq_len: 最长序列长度，位置嵌入用
+            theta: 旋转位置编码的基数
+        """
+        super().__init__()
+        self.d_model = d_mdoel
+        self.num_heads = num_heads
+        self.d_ff = d_ff
+        self.attention = MultiheadSelfAttentionWithRoPE(d_model, num_heads, theta, max_seq_len, device=device)
+        self.fnn = SwiGLUFeedForward(d_model, d_ff, device=device)
+        self.norm1 = RMSNorm(d_model, device=device)
+        self.norm2 = RMSNorm(d_model, device)
+    
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        前向传播：
+        Args:
+            x: 输入tensor:shape(batch, ..., seq_len, d_model)
+            token_positions: 位置索引, shape(batch, ..., seq_len)
+        Returns:
+            output tensor: shape(batch, ..., seq_len, d_model)
+        """
+        token_positions = torch.arange(x.shape[-2], dtype=torch.int, device=x.device)
+        attn_output = self.attention()
+    
+
+
+    
