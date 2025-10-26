@@ -175,6 +175,7 @@ class SwiGLUFeedForward(nn.Module):
 
 class RoPE(nn.Module):
     def __init__(self, theta: float, d_k: int, max_seq_len: int, device=None):
+        super().__init__()
         self.theta = theta
         self.d_k = d_k
         self.max_seq_len = max_seq_len
@@ -218,7 +219,7 @@ def scaled_dot_product_attention(Q: torch.Tensor, K: torch.Tensor, V: torch.Tens
     d_k = Q.shape[-1]
     scores /= sqrt(d_k)
     if mask is not None:
-        scores = scores.masked_fill(mask == 0, float('inf'))
+        scores = scores.masked_fill(mask == 0, float('-inf'))
     
     attn_weights = softmax(scores, dim=-1)
     output = einsum(attn_weights, V, 'batch ... q k, batch ... k d_v -> batch ... q d_v')
@@ -287,7 +288,7 @@ class TransformerBlock(nn.Module):
     """
     Transformer块: 自注意力机制和前馈网络
     """
-    def __init__(self, d_mdoel: int, num_heads: int, max_seq_len: int, d_ff: int=None, theta: float=10000.0, device=None):
+    def __init__(self, d_model: int, num_heads: int, max_seq_len: int, d_ff: int=None, theta: float=10000.0, device=None):
         """
         Args:
             d_model: 输入特征的维度
@@ -303,7 +304,7 @@ class TransformerBlock(nn.Module):
         self.attention = MultiheadSelfAttentionWithRoPE(d_model, num_heads, theta, max_seq_len, device=device)
         self.fnn = SwiGLUFeedForward(d_model, d_ff, device=device)
         self.norm1 = RMSNorm(d_model, device=device)
-        self.norm2 = RMSNorm(d_model, device)
+        self.norm2 = RMSNorm(d_model, device=device)
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -315,8 +316,66 @@ class TransformerBlock(nn.Module):
             output tensor: shape(batch, ..., seq_len, d_model)
         """
         token_positions = torch.arange(x.shape[-2], dtype=torch.int, device=x.device)
-        attn_output = self.attention()
+        attn_output = self.attention(
+            self.norm1(x), token_positions
+        )
+        x2 = x + attn_output
+        ffn_output = self.fnn(self.norm2(x2))
+        return x2 + ffn_output
     
+
+class TransformerLM(nn.Module):
+    """
+    Transformer语言模型
+    """
+    def __init__(self,
+                 vocab_size: int,
+                 context_length: int,
+                 num_layers: int,
+                 d_model: int,
+                 num_heads: int,
+                 d_ff: int = None,
+                 rope_theta: float = 10000.0,
+                 device = None,
+                 dtype = None
+    ):
+        """
+        初始化Transformer语言模型
+        Args:
+            vocab_size: 词汇表大小
+            context_length: 上下文长度，也就是最大序列长度
+            d_model: 输入特征的维度
+            num_heads: 多头注意力的头数
+            num_layers: Transformer块的层数
+            d_ff: 前馈网络的中间层维度
+            rope_theta: 旋转位置编码的基数
+        """
+        super().__init__()
+        self.token_embedding = Embedding(vocab_size, d_model, device=device)
+        self.tf_blocks = nn.ModuleList([
+            TransformerBlock(d_model, num_heads, context_length, d_ff, rope_theta, device=device)
+            for _ in range(num_layers)
+        ])
+        self.ln_final = RMSNorm(d_model, device=device)
+        self.output_embedding = Linear(d_model, vocab_size, device=device)
+    
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        前向传播
+        Args:
+            x: 输入张量，形状为(batch, seq_len)，每个元素是词汇表中的索引
+        Returns:
+            输出张量，形状为(batch, seq_len, vocab_size)
+        """
+        x = self.token_embedding(x)
+        for block in self.tf_blocks:
+            x = block(x)
+        x = self.ln_final(x)
+        x = self.output_embedding(x)
+        # # softmax，暂时先不用
+        # return softmax(x, dim=-1)
+        return x
+
 
 
     
