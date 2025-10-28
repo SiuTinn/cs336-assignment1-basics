@@ -298,7 +298,7 @@ class TransformerBlock(nn.Module):
             theta: 旋转位置编码的基数
         """
         super().__init__()
-        self.d_model = d_mdoel
+        self.d_model = d_model
         self.num_heads = num_heads
         self.d_ff = d_ff
         self.attention = MultiheadSelfAttentionWithRoPE(d_model, num_heads, theta, max_seq_len, device=device)
