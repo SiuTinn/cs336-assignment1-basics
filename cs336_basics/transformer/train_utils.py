@@ -154,7 +154,11 @@ def clip_grad(params: Iterable[torch.nn.Parameter], max_norm: float = 1.0, eps: 
                 param.grad.data.mul_(clip_coef)
 
 
-def get_batch(dataset: npt.NDArray, batch_size: int, context_length: int, device: str
+def get_batch(
+        dataset: npt.NDArray,
+        batch_size: int,
+        context_length: int,
+        device: str
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """
     将一个token序列数据集，通过滑动窗口法，采样batch条长度为context_length的token序列数据
@@ -254,7 +258,7 @@ def compute_grad_norm(parameters: Iterator[nn.parameter]):
 
     参数:
         parameters: 模型参数
-  
+ 
     返回:
         梯度的 L2 范数
     """
