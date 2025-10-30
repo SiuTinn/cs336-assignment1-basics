@@ -1,10 +1,10 @@
 {
     "remote.extensionKind": {
-       "GitHub.copilot":[
-        "ui"
+       "GitHub.copilot": [
+        "workspace"
        ],
-       "GitHub.copilot-chat":[
-        "ui"
+       "GitHub.copilot-chat": [
+        "workspace"
        ]
-    }
+    },
 }

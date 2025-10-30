@@ -63,6 +63,7 @@ if __name__ == "__main__":
         vocab_size=model_config["vocab_size"],
         context_length=model_config["context_length"],
         num_layers=model_config["num_layers"],
+        num_heads=model_config["num_heads"],
         d_model=model_config["d_model"],
         d_ff=model_config["d_ff"],
         rope_theta=model_config["rope_theta"],
@@ -81,7 +82,7 @@ if __name__ == "__main__":
 
     start_iter = 1
     if data_paths["checkpoint_load_path"]:
-        logger.info(f"开始加载模型检查点:{data_paths["checkpoint_load_path"]}")
+        logger.info(f"开始加载模型检查点:{data_paths['checkpoint_load_path']}")
         start_iter = utils.load_checkpoint(
             data_paths["checkpoint_load_path"],
             model=model,
@@ -173,7 +174,7 @@ if __name__ == "__main__":
     logger.info("模型训练完成。")
     
     # 保存最终模型
-    logger.info(f"正在保存最终模型到: {data_paths["final_model_path"]}")
+    logger.info(f"正在保存最终模型到: {data_paths['final_model_path']}")
     utils.save_checkpoint(
         model=model,
         optimizer=optimizer,

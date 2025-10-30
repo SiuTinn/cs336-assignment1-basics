@@ -159,13 +159,26 @@ class BPETokenizer:
 if __name__ == "__main__":
     # Example usage
     special_tokens = ["<|endoftext|>"]
-    vocab_path = "./data/output/TinyStories_train_10000_token_vocab.bin"
-    mergers_path = "./data/output/TinyStories_train_10000_merges.bin"
-    input_path = "./data/TinyStoriesV2-GPT4-valid.txt"
-    # input_path = "./data/TinyStoriesV2-GPT4-train.txt"
+    vocab_path = "./output/TinyStories_train_10000_token_vocab.bin"
+    mergers_path = "./output/TinyStories_train_10000_merges.bin"
+    
+    # 创建 data/token 目录
+    import os
+    os.makedirs("./data/token", exist_ok=True)
+    
     tokenizer = BPETokenizer.from_files(vocab_path, mergers_path, special_tokens)
-    output_path = "./data/output/TinyStories_valid_10000_token_ids.npy"
-    tokenizer.encode_to_npfile(input_path, output_path)
+    
+    # 生成训练集
+    print("开始生成训练集 token IDs...")
+    train_input_path = "./data/TinyStoriesV2-GPT4-train.txt"
+    train_output_path = "./data/token/TinyStories_train_10000_token_ids.npy"
+    tokenizer.encode_to_npfile(train_input_path, train_output_path)
+    
+    # 生成验证集
+    print("\n开始生成验证集 token IDs...")
+    valid_input_path = "./data/TinyStoriesV2-GPT4-valid.txt"
+    valid_output_path = "./data/token/TinyStories_valid_10000_token_ids.npy"
+    tokenizer.encode_to_npfile(valid_input_path, valid_output_path)
 
     # with open(input_path, 'r', encoding='utf-8') as f:
     #     text = f.read()

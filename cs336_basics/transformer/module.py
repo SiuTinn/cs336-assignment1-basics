@@ -194,7 +194,7 @@ class RoPE(nn.Module):
         x_ = torch.view_as_complex(x_)
 
         rope_pos = self.rope[token_positions]
-        x_out = rearrange(torch.view_as_real(x_ * rope_pos), "... seq d two -> ...seq (d two)", two=2)
+        x_out = rearrange(torch.view_as_real(x_ * rope_pos), "... seq d two -> ... seq (d two)", two=2)
         return x_out.to(x.dtype)
 
 
